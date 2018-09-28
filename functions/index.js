@@ -15,22 +15,44 @@ const { fetchYoutube } = require('./fetchYoutube.js');
  *  - Updates document with fetched data
  *  - Set `parsed` as true
  */
-exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{id}').onCreate((snapshot, context) => {
-  // Grab the current value of what was written to the Realtime Database.
-  // You must return a Promise when performing asynchronous tasks inside a Functions such as
-  // writing to the Firebase Realtime Database.
-  // Setting an "uppercase" sibling in the Realtime Database returns a Promise.
-  // return snapshot.ref.parent.child('uppercase').set(uppercase);
+exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}').onCreate((snapshot, context) => {
+  const docId = context.params.docId;
   const original = snapshot.val();
 
-  console.log(original);
-
-  let url = original.url;
+  let { url }  = original;
 
   return fetchYoutube(url)
     .then( response => {
-      console.log('YOUTUBE', response.data);
+      // console.log('YOUTUBE', response.data);
+      // console.log('SNIPPET', response.data.items[0].snippet);
+
+      console.log(docId);
+
+      const data = response.data.items[0];
+
       // Gather important info
-      return response;
+      // - id
+      // - title
+      // - description
+      // - thumbnails
+      // - customUrl
+
+      const { id, snippet } = data;
+      const { title, description, customUrl, thumbnails } = snippet;
+
+      let meta = Object.assign({}, {
+        type: 'youtube',
+        channelId: id,
+        title,
+        description,
+        customUrl,
+        thumbnails,
+      });
+
+      // Set meta
+      return snapshot.ref.set({
+        meta,
+        parsed: true,
+      });
     });
 });
