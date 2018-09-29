@@ -2,3 +2,4 @@
 */**/node_modules
 npm-debug.log
 functions/cloud-functions-emulator.log
+firebase-debug.log
