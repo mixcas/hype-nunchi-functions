@@ -3,8 +3,11 @@ var functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
 
+const express = require('express');
+
 // UTILITIES
 const { fetchYoutube } = require('./fetchYoutube.js');
+const { subscribePubSubHubbub } = require('./subscribePubSubHubbub.js');
 
 // FUNCTIONS
 
@@ -50,9 +53,38 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
       });
 
       // Set meta
-      return snapshot.ref.set({
+      return snapshot.ref.update({
         meta,
         parsed: true,
+        pubSubscribed: false,
       });
+    })
+    .then(() => {
+      // Read the ref again
+      return snapshot.ref.once('value');
+    })
+    .then( (updatedSnap, updatedContext) => {
+      const topic  = updatedSnap.val();
+
+      // Make the subscription to PubSubHubbub
+      return subscribePubSubHubbub(topic);
+    })
+    .then( response => {
+      console.log(response);
+      console.log(response.data);
+      return response;
+    })
+    .catch( error => {
+      console.error(error);
     });
 });
+
+// EXPRESS
+const app = express();
+
+app.get('/service/PubSubHubbub', (request, response) => {
+  console.log(request);
+  response.send('hola bb');
+});
+
+exports.app = functions.https.onRequest(app);
