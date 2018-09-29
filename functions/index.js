@@ -29,7 +29,7 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
       // console.log('YOUTUBE', response.data);
       // console.log('SNIPPET', response.data.items[0].snippet);
 
-      console.log(docId);
+      // console.log(docId);
 
       const data = response.data.items[0];
 
@@ -70,8 +70,8 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
       return subscribePubSubHubbub(topic);
     })
     .then( response => {
-      console.log(response);
-      console.log(response.data);
+      // console.log(response);
+      // console.log(response.data);
       return response;
     })
     .catch( error => {
@@ -83,8 +83,11 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
 const app = express();
 
 app.get('/service/PubSubHubbub', (request, response) => {
-  console.log(request);
-  response.send('hola bb');
+  if(request.query['hub.challenge'] === undefined) {
+    response.send(401, 'missing hub.challenge');
+  } else {
+    response.send(request.query['hub.challenge']);
+  }
 });
 
 exports.app = functions.https.onRequest(app);
