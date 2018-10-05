@@ -627,6 +627,10 @@ circular-json@^0.3.1:
   version "0.3.3"
   resolved "https://registry.yarnpkg.com/circular-json/-/circular-json-0.3.3.tgz#815c99ea84f6809529d2f45791bdf82711352d66"
 
+clarinet@^0.12.0:
+  version "0.12.1"
+  resolved "https://registry.yarnpkg.com/clarinet/-/clarinet-0.12.1.tgz#3e2e2612c2573d172b1b171b92f2dced15c98a5a"
+
 class-utils@^0.3.5:
   version "0.3.6"
   resolved "https://registry.yarnpkg.com/class-utils/-/class-utils-0.3.6.tgz#f93369ae8b9a7ce02fd41faad0ca83033190c463"
@@ -1083,6 +1087,10 @@ etag@~1.8.1:
   version "1.8.1"
   resolved "https://registry.yarnpkg.com/etag/-/etag-1.8.1.tgz#41ae2eeb65efa62268aebfea83ac7d79299b0887"
 
+eventyoshi@^0.2.0:
+  version "0.2.1"
+  resolved "http://registry.npmjs.org/eventyoshi/-/eventyoshi-0.2.1.tgz#e110e47c1197513ff1937542a99d34ed0324b8d4"
+
 expand-brackets@^2.1.4:
   version "2.1.4"
   resolved "https://registry.yarnpkg.com/expand-brackets/-/expand-brackets-2.1.4.tgz#b77735e315ce30f6b6eff0f83b04151a22449622"
@@ -1204,6 +1212,14 @@ faye-websocket@0.11.1:
   resolved "https://registry.yarnpkg.com/faye-websocket/-/faye-websocket-0.11.1.tgz#f0efe18c4f56e4f40afc7e06c719fd5ee6188f38"
   dependencies:
     websocket-driver ">=0.5.1"
+
+feedme@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/feedme/-/feedme-1.2.0.tgz#7049249c1b4ef5293e48906de8d9c8626ce0fd46"
+  dependencies:
+    clarinet "^0.12.0"
+    eventyoshi "^0.2.0"
+    sax "^1.0.0"
 
 figures@^2.0.0:
   version "2.0.0"
@@ -2688,7 +2704,7 @@ safe-regex@^1.1.0:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/safer-buffer/-/safer-buffer-2.1.2.tgz#44fa161b0187b9549dd84bb91802f9bd8385cd6a"
 
-sax@^1.2.4:
+sax@^1.0.0, sax@^1.2.4:
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/sax/-/sax-1.2.4.tgz#2816234e2378bddc4e5354fab5caa895df7100d9"
 

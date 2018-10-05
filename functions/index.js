@@ -4,6 +4,8 @@ const admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
 
 const express = require('express');
+const FeedMe = require('feedme');
+const axios = require('axios');
 
 // UTILITIES
 const { fetchYoutube } = require('./fetchYoutube.js');
@@ -70,9 +72,16 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
       return subscribePubSubHubbub(topic);
     })
     .then( response => {
-      // console.log(response);
-      // console.log(response.data);
-      return response;
+
+      // Succesful subscription returns 202
+      if(response.statusText === 'Accepted' && response.status === 202) {
+        console.log('UPDATING');
+        // Update pubSubscribed
+        return snapshot.ref.update({
+          pubSubscribed: true,
+        });
+      }
+      return true;
     })
     .catch( error => {
       console.error(error);
@@ -83,11 +92,38 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
 const app = express();
 
 app.get('/service/PubSubHubbub', (request, response) => {
-  if(request.query['hub.challenge'] === undefined) {
-    response.send(401, 'missing hub.challenge');
-  } else {
+  if(request.query['hub.challenge'] !== undefined) {
     response.send(request.query['hub.challenge']);
+  } else {
+    response.send(401, 'missing hub.challenge');
   }
+});
+
+app.post('/service/PubSubHubbub', (request, response) => {
+  console.log('PUBSUBHUBBUB');
+  console.log('Content-Type', request.get('Content-Type'));
+  console.log('content-type', request.get('content-type'));
+
+  // Check if IS NOT Atom notification
+  if (!contype || contype.indexOf('application/atom+xml') !== 0) {
+    console.log('returning 400');
+    return response.send(400);
+  } else { // IS Atom notification
+
+    // Start the parser
+    const parser = new FeedMe(true);
+
+    // Listen for `end` event on the parser
+    parser.on('end', () => {
+      // Console log parsed data
+      console.log('ATOM', parser.done());
+    });
+
+    // Write boy into the parser
+    parser.write(request.body);
+  }
+  response.send('');
+
 });
 
 exports.app = functions.https.onRequest(app);
