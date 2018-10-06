@@ -1,11 +1,12 @@
 // MODULES
 var functions = require('firebase-functions');
 const admin = require('firebase-admin');
-admin.initializeApp(functions.config().firebase);
+admin.initializeApp();
 
 const express = require('express');
-const FeedMe = require('feedme');
-const axios = require('axios');
+const parser = require('xml2json');
+const bodyParser = require('body-parser');
+
 
 // UTILITIES
 const { fetchYoutube } = require('./fetchYoutube.js');
@@ -81,16 +82,28 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
           pubSubscribed: true,
         });
       }
-      return true;
+      return false;
     })
     .catch( error => {
       console.error(error);
     });
 });
 
+/**
+ * TODO:
+ * - trigger `track` on create to parse againsta channel regex filter and set `draft:false`
+ */
+
 // EXPRESS
 const app = express();
 
+app.use(bodyParser.raw({
+  inflate: true,
+  limit: '100kb',
+  type: 'application/atom+xml',
+}));
+
+// GET: /service/PubSubHubbub
 app.get('/service/PubSubHubbub', (request, response) => {
   if(request.query['hub.challenge'] !== undefined) {
     response.send(request.query['hub.challenge']);
@@ -99,30 +112,69 @@ app.get('/service/PubSubHubbub', (request, response) => {
   }
 });
 
+// POST: /service/PubSubHubbub
 app.post('/service/PubSubHubbub', (request, response) => {
-  console.log('PUBSUBHUBBUB');
-  console.log('Content-Type', request.get('Content-Type'));
-  console.log('content-type', request.get('content-type'));
+  // TODO: check request origin
+
+  // Get Content-Type
+  contentType = request.get('Content-Type')
 
   // Check if IS NOT Atom notification
-  if (!contype || contype.indexOf('application/atom+xml') !== 0) {
+  if (!contentType || contentType.indexOf('application/atom+xml') !== 0) {
     console.log('returning 400');
     return response.send(400);
-  } else { // IS Atom notification
-
-    // Start the parser
-    const parser = new FeedMe(true);
-
-    // Listen for `end` event on the parser
-    parser.on('end', () => {
-      // Console log parsed data
-      console.log('ATOM', parser.done());
-    });
-
-    // Write boy into the parser
-    parser.write(request.body);
   }
-  response.send('');
+
+  // console.log('BODY', request);
+  // console.log('RAW', request.rawBody);
+
+  let data = {};
+
+  // Start the parser
+  data = parser.toJson(request.rawBody, {
+    object: true,
+  });
+
+  console.log('PARSED DATA', typeof data);
+  console.log('FEED', data.feed);
+  console.log('ENTRY', data.feed.entry);
+
+  if(Object.keys(data).length) {
+    // ADDED
+    if(data.feed !== undefined) {
+
+      const id = data.feed.entry['yt:videoId'];
+      const { title, link, author, published, updated } = data.feed.entry;
+
+      const track = {
+        ref: id,
+        title,
+        link: link.href,
+        author,
+        published,
+        updated,
+        provider: 'youtube',
+        draft: true,
+        private: false,
+      };
+
+      console.log('TRACK', track);
+
+      admin.database().ref(`/tracks/${id}`).set(track);
+    }
+
+    // REMOVED
+    if(data['at:deleted-entry'] !== undefined) {
+
+      const ref = data['at:deleted-entry'].ref;
+
+      const id = ref.split(':')[2];
+
+      admin.database().ref(`/tracks/${id}`).remove();
+    }
+  }
+
+  return response.send('');
 
 });
 
