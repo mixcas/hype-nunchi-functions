@@ -32,7 +32,7 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
       // console.log('YOUTUBE', response.data);
       // console.log('SNIPPET', response.data.items[0].snippet);
 
-      // console.log(docId);
+      console.log('parsed', response.data);
 
       const data = response.data.items[0];
 
@@ -155,7 +155,7 @@ app.post('/service/PubSubHubbub', (request, response) => {
         updated,
         provider: 'youtube',
         draft: true,
-        private: false,
+        public: false,
       };
 
       console.log('TRACK', track);
@@ -179,3 +179,30 @@ app.post('/service/PubSubHubbub', (request, response) => {
 });
 
 exports.app = functions.https.onRequest(app);
+
+/*
+const migration1 = () => {
+  console.log('Starting Migration 1');
+
+  admin.database().ref(`/tracks`).on('value')
+    .then( snapshot => {
+      const original = snapshot.val();
+      console.log(original);
+
+      // New data
+      // Set meta
+      let newData = Object.assign(original, {
+        public: false,
+      });
+
+      if(newData['private'] !== undefined) {
+        delete newData['private'];
+      }
+
+      return snapshot.ref.set(newData);
+    })
+    .catch( error => console.error(error));
+}
+
+migration1();
+*/
