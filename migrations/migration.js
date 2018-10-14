@@ -24,31 +24,35 @@ const MIGRATIONS = {
  1: db => {
    const tracks = db.tracks;
 
+   let transform = {}
+
+   Object.keys(tracks).forEach( key => {
+     const track = tracks[key];
+
+     let status = 'unpublished'
+
+     const filter = /MV|M\V|M\/V|Music Video/g
+
+     if(filter.test(track.title)) {
+       status = 'published'
+     }
+
+
+     transform[key] = Object.assign(
+       {},
+       _.omit(track, 'draft', 'public'),
+       {
+         status,
+       }
+     )
+   })
+
    return Object.assign(
      {},
      db,
      {
-       'tracks': Object.keys(tracks).map( key => {
-         const track = tracks[key];
-
-         let status = 'unpublished'
-
-         const filter = /MV|M\V|M\/V|Music Video/g
-
-         if(filter.test(track.title)) {
-           status = 'published'
-         }
-
-
-         return Object.assign(
-           {},
-           _.omit(track, 'draft', 'public'),
-           {
-             status,
-           }
-         )
-       })
-     }
+       'tracks': transform,
+     },
    )
  }
 }
