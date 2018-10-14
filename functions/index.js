@@ -11,6 +11,7 @@ const bodyParser = require('body-parser');
 // UTILITIES
 const { fetchYoutube } = require('./fetchYoutube.js');
 const { subscribePubSubHubbub } = require('./subscribePubSubHubbub.js');
+const { compactObject } =  require('./lib/utils')
 
 // FUNCTIONS
 
@@ -29,8 +30,9 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
 
   return fetchYoutube(url)
     .then( response => {
-      // console.log('YOUTUBE', response.data);
-      // console.log('SNIPPET', response.data.items[0].snippet);
+      console.log('fetchYoutube')
+      console.log('YOUTUBE', response.data);
+      console.log('SNIPPET', response.data.items[0].snippet);
 
       console.log('parsed', response.data);
 
@@ -126,7 +128,7 @@ app.post('/service/PubSubHubbub', (request, response) => {
   }
 
   // console.log('BODY', request);
-  // console.log('RAW', request.rawBody);
+  console.log('RAW', request.rawBody);
 
   let data = {};
 
@@ -135,16 +137,25 @@ app.post('/service/PubSubHubbub', (request, response) => {
     object: true,
   });
 
-  console.log('PARSED DATA', typeof data);
+  console.log('PARSED DATA', data);
   console.log('FEED', data.feed);
   console.log('ENTRY', data.feed.entry);
 
   if(Object.keys(data).length) {
     // ADDED
-    if(data.feed !== undefined) {
+    if(data.feed !== undefined && data.feed.entry !== undefined) {
 
       const id = data.feed.entry['yt:videoId'];
-      const { title, link, author, published, updated } = data.feed.entry;
+      let { title, link, author, published, updated } = data.feed.entry;
+
+      // link can be an array of objects
+      if(link[0] !== undefined) {
+        link = link[0]
+      }
+
+      const filter = /MV|M\V|M\/V|Music Video/g
+
+      const status = filter.test(title) ? 'published' : 'unpublished';
 
       const track = {
         ref: id,
@@ -154,13 +165,13 @@ app.post('/service/PubSubHubbub', (request, response) => {
         published,
         updated,
         provider: 'youtube',
-        draft: true,
-        public: false,
+        hidden: false,
+        status,
       };
 
-      console.log('TRACK', track);
+      console.log('TRACK', compactObject(track));
 
-      admin.database().ref(`/tracks/${id}`).set(track);
+      admin.database().ref(`/tracks/${id}`).set(compactObject(track));
     }
 
     // REMOVED
@@ -179,30 +190,3 @@ app.post('/service/PubSubHubbub', (request, response) => {
 });
 
 exports.app = functions.https.onRequest(app);
-
-/*
-const migration1 = () => {
-  console.log('Starting Migration 1');
-
-  admin.database().ref(`/tracks`).on('value')
-    .then( snapshot => {
-      const original = snapshot.val();
-      console.log(original);
-
-      // New data
-      // Set meta
-      let newData = Object.assign(original, {
-        public: false,
-      });
-
-      if(newData['private'] !== undefined) {
-        delete newData['private'];
-      }
-
-      return snapshot.ref.set(newData);
-    })
-    .catch( error => console.error(error));
-}
-
-migration1();
-*/

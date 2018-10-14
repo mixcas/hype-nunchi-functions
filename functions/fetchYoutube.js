@@ -22,12 +22,15 @@ const fetchYoutube = (url) => {
   let m; // regex matches
 
   if ((m = regex.exec(url)) !== null) {
+    console.log('M', m)
     if(m[4] === 'channel/') {
       params['id'] = m[5];
     } else if(m[4] === 'user/') {
       params['forUsername'] = m[5];
     }
   }
+
+  console.log('PARAMS',params)
 
   return axios(`${baseUrl}/channels`, {
     params,
