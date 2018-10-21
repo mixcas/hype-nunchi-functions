@@ -6,7 +6,7 @@ const axios = require('axios');
 
 // CONSTANTS
 const baseUrl = 'https://www.googleapis.com/youtube/v3';
-const regex = /((http|https):\/\/|)(www\.|)youtube\.com\/(channel\/|user\/)([a-zA-Z0-9\-]{1,})/;
+const regex = /((http|https):\/\/|)(www\.|)youtube\.com\/(channel\/|user\/)([a-zA-Z0-9\-\_]{1,})/;
 
 /**
  * Returns a promise that checks the channel or user data
