@@ -48,21 +48,23 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
       const { id, snippet } = data;
       const { title, description, customUrl, thumbnails } = snippet;
 
-      let meta = Object.assign({}, {
+      let meta = compactObject(Object.assign({}, {
         type: 'youtube',
-        channelId: id,
         title,
         description,
         customUrl,
         thumbnails,
-      });
+      }));
+
+      console.log('META', meta)
 
       // Set meta
-      return snapshot.ref.update({
+      return snapshot.ref.update(compactObject({
+        channelId: id,
         meta,
         parsed: true,
         pubSubscribed: false,
-      });
+      }));
     })
     .then(() => {
       // Read the ref again
@@ -75,6 +77,9 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
       return subscribePubSubHubbub(topic);
     })
     .then( response => {
+      console.log('SUPERFEEDR RESPONSE', response)
+      console.log('SUPERFEEDR STATUS TEXT', response.statusText)
+      console.log('SUPERFEEDR STATUS', response.status)
 
       // Succesful subscription returns 202
       if(response.statusText === 'Accepted' && response.status === 202) {
@@ -106,7 +111,9 @@ app.use(bodyParser.raw({
 }));
 
 // GET: /service/PubSubHubbub
-app.get('/service/PubSubHubbub', (request, response) => {
+app.get('/service/PubSubHubbub/:channelId', (request, response) => {
+  console.log('GET /service/PubSubHubbub/:channelId', request.params)
+
   if(request.query['hub.challenge'] !== undefined) {
     response.send(request.query['hub.challenge']);
   } else {
@@ -115,14 +122,18 @@ app.get('/service/PubSubHubbub', (request, response) => {
 });
 
 // POST: /service/PubSubHubbub
-app.post('/service/PubSubHubbub', (request, response) => {
+app.post('/service/PubSubHubbub/:channelId', (request, response) => {
+  console.log('POST /service/PubSubHubbub/:channelId', request.params)
   // TODO: check request origin
+
+  // get channelId from the request
+  const { channelId } = request.params
 
   // Get Content-Type
   contentType = request.get('Content-Type')
 
   // Check if IS NOT Atom notification
-  if (!contentType || contentType.indexOf('application/atom+xml') !== 0) {
+  if (!contentType || contentType.indexOf('application/atom+xml') !== 0 || channelId === undefined) {
     console.log('returning 400');
     return response.send(400);
   }
@@ -145,7 +156,10 @@ app.post('/service/PubSubHubbub', (request, response) => {
     // ADDED
     if(data.feed !== undefined && data.feed.entry !== undefined) {
 
+      // Get video ID
       const id = data.feed.entry['yt:videoId'];
+
+      // Get meta data
       let { title, link, author, published, updated } = data.feed.entry;
 
       // link can be an array of objects
