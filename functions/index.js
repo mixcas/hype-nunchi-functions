@@ -226,6 +226,33 @@ app.post('/service/PubSubHubbub/:channelId', (request, response) => {
 
 });
 
+app.get('/service/PubSubHubbub/subscribe/all', (request, response) => {
+
+  // Get all subscriptions
+  admin.database().ref('/subscriptions').once('value')
+    .then( (snapshot) => {
+
+      const documents = snapshot.val();
+
+      if (Object.keys(documents).length > 0) {
+        const promises = Object.keys(documents).map( key => {
+          const topic = documents[key]
+
+          return subscribePubSubHubbub(topic)
+        })
+
+        Promise.all(promises)
+      }
+    })
+    .then( res => {
+      console.log('RES', res)
+      return response.send('subscribed');
+    })
+    .catch( error => {
+      console.log(error)
+    })
+})
+
 app.post('/service/PubSubHubbub/subscribe/:topicId', cors(corsOptions), (request, response) => {
 
   // get channelId from the request
@@ -245,7 +272,7 @@ app.post('/service/PubSubHubbub/subscribe/:topicId', cors(corsOptions), (request
       console.log('RES', res)
       // Succesful subscription returns 202
       if(res.statusText === 'Accepted' && res.status === 202) {
-        console.log('SUBSCRIIBED');
+        console.log('SUBSCRIBED');
       }
 
       return response.send('subscribed');
