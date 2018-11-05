@@ -190,9 +190,10 @@ app.post('/service/PubSubHubbub/:channelId', (request, response) => {
         link = link[0]
       }
 
-      const filter = /MV|M\V|M\/V|Music Video/g
+      const filterMV = /MV|M\\V|M\/V|M\_V|Music Video|MusicVideo/gi
+      const filterTeaser = /teaser/gi
 
-      const status = filter.test(title) ? 'published' : 'unpublished';
+      const status = filterMV.test(title) && !filterTeaser.test(title) ? 'published' : 'unpublished';
 
       const track = {
         ref: id,
