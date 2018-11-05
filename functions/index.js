@@ -4,6 +4,8 @@ const admin = require('firebase-admin');
 admin.initializeApp();
 
 const express = require('express');
+const cors = require('cors')
+const morgan = require('morgan')
 const parser = require('xml2json');
 const bodyParser = require('body-parser');
 
@@ -77,9 +79,9 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
       return subscribePubSubHubbub(topic);
     })
     .then( response => {
-      console.log('SUPERFEEDR RESPONSE', response)
-      console.log('SUPERFEEDR STATUS TEXT', response.statusText)
-      console.log('SUPERFEEDR STATUS', response.status)
+      console.log('HUB RESPONSE', response)
+      console.log('HUB STATUS TEXT', response.statusText)
+      console.log('HUB STATUS', response.status)
 
       // Succesful subscription returns 202
       if(response.statusText === 'Accepted' && response.status === 202) {
@@ -104,11 +106,32 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
 // EXPRESS
 const app = express();
 
+app.use((request, response, next) => {
+  console.log('A REQUEST FROM', request.url);
+  console.log('A REQUEST', request);
+  next()
+})
+
+// MORGAN
+app.use(morgan('combined'))
+
+// RAW BODY PARSER
 app.use(bodyParser.raw({
   inflate: true,
   limit: '100kb',
   type: 'application/atom+xml',
 }));
+
+const whitelist = ['http://local.hype.nunchi.love', 'http://.hype.nunchi.love']
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1) {
+      return callback(null, true)
+    } else {
+      return callback(new Error('Not allowed by CORS'))
+    }
+  }
+}
 
 // GET: /service/PubSubHubbub
 app.get('/service/PubSubHubbub/:channelId', (request, response) => {
@@ -149,12 +172,12 @@ app.post('/service/PubSubHubbub/:channelId', (request, response) => {
   });
 
   console.log('PARSED DATA', data);
-  console.log('FEED', data.feed);
-  console.log('ENTRY', data.feed.entry);
 
   if(Object.keys(data).length) {
     // ADDED
     if(data.feed !== undefined && data.feed.entry !== undefined) {
+      console.log('FEED', data.feed);
+      console.log('ENTRY', data.feed.entry);
 
       // Get video ID
       const id = data.feed.entry['yt:videoId'];
@@ -202,5 +225,35 @@ app.post('/service/PubSubHubbub/:channelId', (request, response) => {
   return response.send('');
 
 });
+
+app.post('/service/PubSubHubbub/subscribe/:topicId', cors(corsOptions), (request, response) => {
+
+  // get channelId from the request
+  const { topicId } = request.params
+
+  if(topicId === undefined) {
+    console.log('returning 401');
+    return response.send(401, 'missing topicId');
+  }
+
+  const topic = {
+    channelId: topicId,
+  }
+
+  subscribePubSubHubbub(topic)
+    .then( res => {
+      console.log('RES', res)
+      // Succesful subscription returns 202
+      if(res.statusText === 'Accepted' && res.status === 202) {
+        console.log('SUBSCRIIBED');
+      }
+
+      return response.send('subscribed');
+    })
+    .catch( error => {
+      console.error(error);
+    });
+})
+
 
 exports.app = functions.https.onRequest(app);
