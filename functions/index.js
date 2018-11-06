@@ -192,8 +192,12 @@ app.post('/service/PubSubHubbub/:channelId', (request, response) => {
 
       const filterMV = /MV|M\\V|M\/V|M\_V|MusicVideo|OfficialVideo/gi
       const filterTeaser = /teaser/gi
+      const filterBehindTheScenes = /BehindTheScenes/gi
 
-      const status = filterMV.test(title.replace(/\s/g,'')) && !filterTeaser.test(title) ? 'published' : 'unpublished';
+      const status = filterMV.test(title.replace(/\s/g,''))  // Check for MV or MusicVideo
+        && !filterTeaser.test(title) // Check is not Teaser
+        && !filterBehindTheScenes.test(title.replace(/\s/g,'')) // Checkis not Behind the scenes
+        ? 'published' : 'unpublished';
 
       const track = {
         ref: id,
