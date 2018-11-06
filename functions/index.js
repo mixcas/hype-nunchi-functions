@@ -190,10 +190,10 @@ app.post('/service/PubSubHubbub/:channelId', (request, response) => {
         link = link[0]
       }
 
-      const filterMV = /MV|M\\V|M\/V|M\_V|Music Video|MusicVideo/gi
+      const filterMV = /MV|M\\V|M\/V|M\_V|MusicVideo|OfficialVideo/gi
       const filterTeaser = /teaser/gi
 
-      const status = filterMV.test(title) && !filterTeaser.test(title) ? 'published' : 'unpublished';
+      const status = filterMV.test(title.replace(/\s/g,'')) && !filterTeaser.test(title) ? 'published' : 'unpublished';
 
       const track = {
         ref: id,
@@ -242,12 +242,18 @@ app.get('/service/PubSubHubbub/subscribe/all', (request, response) => {
           return subscribePubSubHubbub(topic)
         })
 
-        Promise.all(promises)
+        return Promise.all(promises)
       }
+
+      return 'error'
     })
     .then( res => {
       console.log('RES', res)
-      return response.send('subscribed');
+      if (res === 'error') {
+        return response.send('error');
+      } else {
+        return response.send('subscribed');
+      }
     })
     .catch( error => {
       console.log(error)
