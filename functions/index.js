@@ -1,19 +1,19 @@
 // MODULES
-var functions = require('firebase-functions');
-const admin = require('firebase-admin');
-admin.initializeApp();
+var functions = require('firebase-functions')
+const admin = require('firebase-admin')
+admin.initializeApp()
 
-const express = require('express');
+const express = require('express')
 const cors = require('cors')
 const morgan = require('morgan')
-const parser = require('xml2json');
-const bodyParser = require('body-parser');
+const parser = require('xml2json')
+const bodyParser = require('body-parser')
 
 
 // UTILITIES
-const { fetchYoutube } = require('./fetchYoutube.js');
-const { subscribePubSubHubbub } = require('./subscribePubSubHubbub.js');
-const { compactObject } =  require('./lib/utils')
+const { fetchYoutube } = require('./fetchYoutube.js')
+const { subscribePubSubHubbub } = require('./subscribePubSubHubbub.js')
+const { isMusicVideo, compactObject } =  require('./lib/utils')
 
 // FUNCTIONS
 
@@ -25,20 +25,20 @@ const { compactObject } =  require('./lib/utils')
  *  - Set `parsed` as true
  */
 exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}').onCreate((snapshot, context) => {
-  const docId = context.params.docId;
-  const original = snapshot.val();
+  const docId = context.params.docId
+  const original = snapshot.val()
 
-  let { url }  = original;
+  let { url }  = original
 
   return fetchYoutube(url)
     .then( response => {
       console.log('fetchYoutube')
-      console.log('YOUTUBE', response.data);
-      console.log('SNIPPET', response.data.items[0].snippet);
+      console.log('YOUTUBE', response.data)
+      console.log('SNIPPET', response.data.items[0].snippet)
 
-      console.log('parsed', response.data);
+      console.log('parsed', response.data)
 
-      const data = response.data.items[0];
+      const data = response.data.items[0]
 
       // Gather important info
       // - id
@@ -47,8 +47,8 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
       // - thumbnails
       // - customUrl
 
-      const { id, snippet } = data;
-      const { title, description, customUrl, thumbnails } = snippet;
+      const { id, snippet } = data
+      const { title, description, customUrl, thumbnails } = snippet
 
       let meta = compactObject(Object.assign({}, {
         type: 'youtube',
@@ -56,7 +56,7 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
         description,
         customUrl,
         thumbnails,
-      }));
+      }))
 
       console.log('META', meta)
 
@@ -66,17 +66,17 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
         meta,
         parsed: true,
         pubSubscribed: false,
-      }));
+      }))
     })
     .then(() => {
       // Read the ref again
-      return snapshot.ref.once('value');
+      return snapshot.ref.once('value')
     })
     .then( (updatedSnap, updatedContext) => {
-      const topic  = updatedSnap.val();
+      const topic  = updatedSnap.val()
 
       // Make the subscription to PubSubHubbub
-      return subscribePubSubHubbub(topic);
+      return subscribePubSubHubbub(topic)
     })
     .then( response => {
       console.log('HUB RESPONSE', response)
@@ -85,18 +85,18 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
 
       // Succesful subscription returns 202
       if(response.statusText === 'Accepted' && response.status === 202) {
-        console.log('UPDATING');
+        console.log('UPDATING')
         // Update pubSubscribed
         return snapshot.ref.update({
           pubSubscribed: true,
-        });
+        })
       }
-      return false;
+      return false
     })
     .catch( error => {
-      console.error(error);
-    });
-});
+      console.error(error)
+    })
+})
 
 /**
  * TODO:
@@ -104,11 +104,11 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
  */
 
 // EXPRESS
-const app = express();
+const app = express()
 
 app.use((request, response, next) => {
-  console.log('A REQUEST FROM', request.url);
-  console.log('A REQUEST', request);
+  console.log('A REQUEST FROM', request.url)
+  console.log('A REQUEST', request)
   next()
 })
 
@@ -120,7 +120,7 @@ app.use(bodyParser.raw({
   inflate: true,
   limit: '100kb',
   type: 'application/atom+xml',
-}));
+}))
 
 const whitelist = ['http://local.hype.nunchi.love', 'http://.hype.nunchi.love']
 const corsOptions = {
@@ -138,11 +138,11 @@ app.get('/service/PubSubHubbub/:channelId', (request, response) => {
   console.log('GET /service/PubSubHubbub/:channelId', request.params)
 
   if(request.query['hub.challenge'] !== undefined) {
-    response.send(request.query['hub.challenge']);
+    response.send(request.query['hub.challenge'])
   } else {
-    response.send(401, 'missing hub.challenge');
+    response.send(401, 'missing hub.challenge')
   }
-});
+})
 
 // POST: /service/PubSubHubbub
 app.post('/service/PubSubHubbub/:channelId', (request, response) => {
@@ -157,47 +157,40 @@ app.post('/service/PubSubHubbub/:channelId', (request, response) => {
 
   // Check if IS NOT Atom notification
   if (!contentType || contentType.indexOf('application/atom+xml') !== 0 || channelId === undefined) {
-    console.log('returning 400');
-    return response.send(400);
+    console.log('returning 400')
+    return response.send(400)
   }
 
-  // console.log('BODY', request);
-  console.log('RAW', request.rawBody);
+  // console.log('BODY', request)
+  console.log('RAW', request.rawBody)
 
-  let data = {};
+  let data = {}
 
   // Start the parser
   data = parser.toJson(request.rawBody, {
     object: true,
-  });
+  })
 
-  console.log('PARSED DATA', data);
+  console.log('PARSED DATA', data)
 
   if(Object.keys(data).length) {
     // ADDED
     if(data.feed !== undefined && data.feed.entry !== undefined) {
-      console.log('FEED', data.feed);
-      console.log('ENTRY', data.feed.entry);
+      console.log('FEED', data.feed)
+      console.log('ENTRY', data.feed.entry)
 
       // Get video ID
-      const id = data.feed.entry['yt:videoId'];
+      const id = data.feed.entry['yt:videoId']
 
       // Get meta data
-      let { title, link, author, published, updated } = data.feed.entry;
+      let { title, link, author, published, updated } = data.feed.entry
 
       // link can be an array of objects
       if(link[0] !== undefined) {
         link = link[0]
       }
 
-      const filterMV = /MV|M\\V|M\/V|M\_V|MusicVideo|OfficialVideo/gi
-      const filterTeaser = /teaser/gi
-      const filterBehindTheScenes = /BehindTheScenes/gi
-
-      const status = filterMV.test(title.replace(/\s/g,''))  // Check for MV or MusicVideo
-        && !filterTeaser.test(title) // Check is not Teaser
-        && !filterBehindTheScenes.test(title.replace(/\s/g,'')) // Checkis not Behind the scenes
-        ? 'published' : 'unpublished';
+      const status = isMusicVideo(title) ? 'published' : 'unpublished'
 
       const track = {
         ref: id,
@@ -209,27 +202,27 @@ app.post('/service/PubSubHubbub/:channelId', (request, response) => {
         provider: 'youtube',
         hidden: false,
         status,
-      };
+      }
 
-      console.log('TRACK', compactObject(track));
+      console.log('TRACK', compactObject(track))
 
-      admin.database().ref(`/tracks/${id}`).set(compactObject(track));
+      admin.database().ref(`/tracks/${id}`).set(compactObject(track))
     }
 
     // REMOVED
     if(data['at:deleted-entry'] !== undefined) {
 
-      const ref = data['at:deleted-entry'].ref;
+      const ref = data['at:deleted-entry'].ref
 
-      const id = ref.split(':')[2];
+      const id = ref.split(':')[2]
 
-      admin.database().ref(`/tracks/${id}`).remove();
+      admin.database().ref(`/tracks/${id}`).remove()
     }
   }
 
-  return response.send('');
+  return response.send('')
 
-});
+})
 
 app.get('/service/PubSubHubbub/subscribe/all', (request, response) => {
 
@@ -237,7 +230,7 @@ app.get('/service/PubSubHubbub/subscribe/all', (request, response) => {
   admin.database().ref('/subscriptions').once('value')
     .then( (snapshot) => {
 
-      const documents = snapshot.val();
+      const documents = snapshot.val()
 
       if (Object.keys(documents).length > 0) {
         const promises = Object.keys(documents).map( key => {
@@ -254,9 +247,9 @@ app.get('/service/PubSubHubbub/subscribe/all', (request, response) => {
     .then( res => {
       console.log('RES', res)
       if (res === 'error') {
-        return response.send('error');
+        return response.send('error')
       } else {
-        return response.send('subscribed');
+        return response.send('subscribed')
       }
     })
     .catch( error => {
@@ -270,8 +263,8 @@ app.post('/service/PubSubHubbub/subscribe/:topicId', cors(corsOptions), (request
   const { topicId } = request.params
 
   if(topicId === undefined) {
-    console.log('returning 401');
-    return response.send(401, 'missing topicId');
+    console.log('returning 401')
+    return response.send(401, 'missing topicId')
   }
 
   const topic = {
@@ -283,15 +276,15 @@ app.post('/service/PubSubHubbub/subscribe/:topicId', cors(corsOptions), (request
       console.log('RES', res)
       // Succesful subscription returns 202
       if(res.statusText === 'Accepted' && res.status === 202) {
-        console.log('SUBSCRIBED');
+        console.log('SUBSCRIBED')
       }
 
-      return response.send('subscribed');
+      return response.send('subscribed')
     })
     .catch( error => {
-      console.error(error);
-    });
+      console.error(error)
+    })
 })
 
 
-exports.app = functions.https.onRequest(app);
+exports.app = functions.https.onRequest(app)
