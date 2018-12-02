@@ -1,6 +1,11 @@
 const _ = require('underscore')
 
-const compactObject = o => {
+/**
+ * compactObject
+ *
+ * remove all null and undefined values from the object
+ */
+module.exports.compactObject = o => {
   let clone = _.clone(o)
   _.each(clone, (v, k) => {
     if(!v) {
@@ -10,9 +15,12 @@ const compactObject = o => {
   return clone
 }
 
-// Music Video Check
-// Check a string to decide is it'a music video
-const isMusicVideo = title => {
+/**
+ * isMusicVideo
+ *
+ * Check a string to decide is it'a music video
+ */
+module.exports.isMusicVideo = title => {
   // Filters
   const filterMV = /MV|MusicVideo|OfficialVideo|VideoOfficial/gi
   const filterTeaser = /teaser|trailer/gi
@@ -27,7 +35,4 @@ const isMusicVideo = title => {
 
 // Remove spaces, slashes, backslashes and underscores
 const cleanTitle = title => title.replace(/\\|\/|\_|\s/gm,'')
-
-module.exports.compactObject = compactObject
-module.exports.isMusicVideo = isMusicVideo
 module.exports.cleanTitle = cleanTitle

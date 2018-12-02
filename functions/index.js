@@ -1,5 +1,5 @@
-// MODULES
 var functions = require('firebase-functions')
+// MODULES
 const admin = require('firebase-admin')
 admin.initializeApp()
 
@@ -8,12 +8,13 @@ const cors = require('cors')
 const morgan = require('morgan')
 const parser = require('xml2json')
 const bodyParser = require('body-parser')
-
+const dateFns = require('date-fns')
 
 // UTILITIES
 const { fetchYoutube } = require('./fetchYoutube.js')
 const { subscribePubSubHubbub } = require('./subscribePubSubHubbub.js')
 const { isMusicVideo, compactObject } =  require('./lib/utils')
+const { isOldTrack, cleanOldTracks } =  require('./lib/charts')
 
 // FUNCTIONS
 
@@ -99,9 +100,41 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
 })
 
 /**
- * TODO:
- * - trigger `track` on create to parse againsta channel regex filter and set `draft:false`
+ * Reacts to onUpdate in the status property in the /tracks collection
+ *
+ *  -
  */
+exports.updateInChart = functions.database.ref('/tracks/{docId}').onUpdate((snapshot, context) => {
+  const docId = context.params.docId
+  const doc = snapshot.after.val()
+
+  // if published
+  if (doc.status === 'published') {
+    // add to Latest chart
+    return admin.database().ref(`/chart/latest/tracks/${docId}`).update(compactObject(doc))
+  } else if (doc.status === 'unpublished') {
+    // remove from Latest chart
+    return admin.database().ref(`/chart/latest/tracks/${docId}`).remove()
+  }
+
+})
+
+exports.cleanChart = functions.database.ref('/chart/latest/').onUpdate((snapshot, context) => {
+  const documents = snapshot.after.val()
+  const { updated, tracks } = documents
+
+  if ((updated && dateFns.differenceInSeconds(new Date(), updated) < 30) || !Object.keys(documents).length) {
+    return false
+  }
+
+  const cleanTracks = cleanOldTracks(tracks)
+
+  return admin.database().ref('/chart/latest').update({
+    tracks: cleanTracks,
+    updated: new Date(),
+
+  })
+})
 
 // EXPRESS
 const app = express()
