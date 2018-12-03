@@ -3,6 +3,8 @@ const _ = require('underscore')
 
 const db = require('./input.json')
 
+const { cleanOldTracks } = require('../functions/lib/charts.js')
+
 const migrate = (db, version) => {
 
   const newDB = MIGRATIONS[version](db)
@@ -19,40 +21,19 @@ const migrate = (db, version) => {
 }
 
 const MIGRATIONS = {
-  1: db => {
-    const tracks = db.tracks;
-
+  2: db => {
     let transform = {}
 
-    Object.keys(tracks).forEach( key => {
-      const track = tracks[key];
+    Object.keys(db).forEach( key => {
+      const track = db[key]
 
-      let status = 'unpublished'
-
-      const filter = /MV|M\V|M\/V|Music Video/g
-
-      if(filter.test(track.title)) {
-        status = 'published'
+      if(track.status === 'published') {
+        transform[key] = track
       }
 
-
-      transform[key] = Object.assign(
-        {},
-        _.omit(track, 'draft', 'public'),
-        {
-          status,
-        }
-      )
     })
-
-    return Object.assign(
-      {},
-      db,
-      {
-        'tracks': transform,
-      },
-    )
+    return cleanOldTracks(transform)
   },
 }
 
-migrate(db, 1);
+migrate(db, 2);
