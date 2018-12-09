@@ -117,6 +117,8 @@ exports.updateInChart = functions.database.ref('/tracks/{docId}').onUpdate((snap
     return admin.database().ref(`/chart/latest/tracks/${docId}`).remove()
   }
 
+  return true
+
 })
 
 exports.cleanChart = functions.database.ref('/chart/latest/').onUpdate((snapshot, context) => {
