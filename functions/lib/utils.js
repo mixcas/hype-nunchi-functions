@@ -24,7 +24,7 @@ module.exports.isMusicVideo = title => {
   // Filters
   const filterMV = /MV|MusicVideo|OfficialVideo|VideoOfficial/gi
   const filterTeaser = /teaser|trailer/gi
-  const filterBehindTheScenes = /BehindTheScenes/gi
+  const filterBehindTheScenes = /BehindTheScenes|MakingOf|MakingFilm/gi
 
   const clearTitle = cleanTitle(title)
 

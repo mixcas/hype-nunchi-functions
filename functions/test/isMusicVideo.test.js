@@ -31,6 +31,13 @@ describe('Utils', function() {
       assert.equal(expectedValue, isMusicVideo(testValue))
     })
 
+    it('should return false if title includes Making Film', function() {
+      const expectedValue = false
+      const testValue = 'THE BOYZ(더보이즈) \'No Air\' M/V MAKING FILM #2'
+
+      assert.equal(expectedValue, isMusicVideo(testValue))
+    })
+
     it('should return true if title includes Official Video', function() {
       const expectedValue = true
       const testValue = 'Sway D - URRRPANG! (feat. Reddy & ICE PUFF) [Official Video]'
