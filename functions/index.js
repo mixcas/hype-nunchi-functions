@@ -11,7 +11,7 @@ const bodyParser = require('body-parser')
 const dateFns = require('date-fns')
 
 // UTILITIES
-const { fetchYoutube } = require('./fetchYoutube.js')
+const { fetchYoutubeChannel } = require('./lib/fetchYoutubeChannel.js')
 const { subscribePubSubHubbub } = require('./subscribePubSubHubbub.js')
 const { isMusicVideo, compactObject } =  require('./lib/utils')
 const { isOldTrack, cleanOldTracks } =  require('./lib/charts')
@@ -31,9 +31,9 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
 
   let { url }  = original
 
-  return fetchYoutube(url)
+  return fetchYoutubeChannel(url)
     .then( response => {
-      console.log('fetchYoutube')
+      console.log('fetchYoutubeChannel')
       console.log('YOUTUBE', response.data)
       console.log('SNIPPET', response.data.items[0].snippet)
 
