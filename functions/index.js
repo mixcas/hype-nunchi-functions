@@ -33,11 +33,10 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
 
   return fetchYoutubeChannel(url)
     .then( response => {
-      console.log('fetchYoutubeChannel')
-      console.log('YOUTUBE', response.data)
-      console.log('SNIPPET', response.data.items[0].snippet)
-
-      console.log('parsed', response.data)
+      // console.log('fetchYoutubeChannel')
+      // console.log('YOUTUBE', response.data)
+      // console.log('SNIPPET', response.data.items[0].snippet)
+      // console.log('parsed', response.data)
 
       const data = response.data.items[0]
 
@@ -59,7 +58,7 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
         thumbnails,
       }))
 
-      console.log('META', meta)
+      // console.log('META', meta)
 
       // Set meta
       return snapshot.ref.update(compactObject({
@@ -80,13 +79,13 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
       return subscribePubSubHubbub(topic)
     })
     .then( response => {
-      console.log('HUB RESPONSE', response)
-      console.log('HUB STATUS TEXT', response.statusText)
-      console.log('HUB STATUS', response.status)
+      // console.log('HUB RESPONSE', response)
+      // console.log('HUB STATUS TEXT', response.statusText)
+      // console.log('HUB STATUS', response.status)
 
       // Succesful subscription returns 202
       if(response.statusText === 'Accepted' && response.status === 202) {
-        console.log('UPDATING')
+        // console.log('UPDATING')
         // Update pubSubscribed
         return snapshot.ref.update({
           pubSubscribed: true,
@@ -170,7 +169,7 @@ const corsOptions = {
 
 // GET: /service/PubSubHubbub
 app.get('/service/PubSubHubbub/:channelId', (request, response) => {
-  console.log('GET /service/PubSubHubbub/:channelId', request.params)
+  // console.log('GET /service/PubSubHubbub/:channelId', request.params)
 
   if(request.query['hub.challenge'] !== undefined) {
     response.send(request.query['hub.challenge'])
@@ -181,7 +180,7 @@ app.get('/service/PubSubHubbub/:channelId', (request, response) => {
 
 // POST: /service/PubSubHubbub
 app.post('/service/PubSubHubbub/:channelId', (request, response) => {
-  console.log('POST /service/PubSubHubbub/:channelId', request.params)
+  // console.log('POST /service/PubSubHubbub/:channelId', request.params)
   // TODO: check request origin
 
   // get channelId from the request
@@ -192,12 +191,12 @@ app.post('/service/PubSubHubbub/:channelId', (request, response) => {
 
   // Check if IS NOT Atom notification
   if (!contentType || contentType.indexOf('application/atom+xml') !== 0 || channelId === undefined) {
-    console.log('returning 400')
+    // console.log('returning 400')
     return response.send(400)
   }
 
   // console.log('BODY', request)
-  console.log('RAW', request.rawBody)
+  // console.log('RAW', request.rawBody)
 
   let data = {}
 
@@ -206,13 +205,13 @@ app.post('/service/PubSubHubbub/:channelId', (request, response) => {
     object: true,
   })
 
-  console.log('PARSED DATA', data)
+  // console.log('PARSED DATA', data)
 
   if(Object.keys(data).length) {
     // ADDED
     if(data.feed !== undefined && data.feed.entry !== undefined) {
-      console.log('FEED', data.feed)
-      console.log('ENTRY', data.feed.entry)
+      // console.log('FEED', data.feed)
+      // console.log('ENTRY', data.feed.entry)
 
       // Get video ID
       const id = data.feed.entry['yt:videoId']
@@ -239,7 +238,7 @@ app.post('/service/PubSubHubbub/:channelId', (request, response) => {
         status,
       }
 
-      console.log('TRACK', compactObject(track))
+      // console.log('TRACK', compactObject(track))
 
       admin.database().ref(`/tracks/${id}`).set(compactObject(track))
     }
@@ -280,7 +279,7 @@ app.get('/service/PubSubHubbub/subscribe/all', (request, response) => {
       return 'error'
     })
     .then( res => {
-      console.log('RES', res)
+      // console.log('RES', res)
       if (res === 'error') {
         return response.send('error')
       } else {
@@ -298,7 +297,7 @@ app.post('/service/PubSubHubbub/subscribe/:topicId', cors(corsOptions), (request
   const { topicId } = request.params
 
   if(topicId === undefined) {
-    console.log('returning 401')
+    // console.log('returning 401')
     return response.send(401, 'missing topicId')
   }
 
@@ -308,7 +307,7 @@ app.post('/service/PubSubHubbub/subscribe/:topicId', cors(corsOptions), (request
 
   subscribePubSubHubbub(topic)
     .then( res => {
-      console.log('RES', res)
+      // console.log('RES', res)
       // Succesful subscription returns 202
       if(res.statusText === 'Accepted' && res.status === 202) {
         console.log('SUBSCRIBED')
