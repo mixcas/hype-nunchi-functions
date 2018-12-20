@@ -14,7 +14,7 @@ const dateFns = require('date-fns')
 const { fetchYoutubeChannel } = require('./lib/fetchYoutubeChannel.js')
 const { subscribePubSubHubbub } = require('./subscribePubSubHubbub.js')
 const { isMusicVideo, compactObject } =  require('./lib/utils')
-const { isOldTrack, cleanOldTracks } =  require('./lib/charts')
+const { isOldTrack, cleanOldTracks, getDifferenceTracks } =  require('./lib/charts')
 
 // FUNCTIONS
 
@@ -130,6 +130,8 @@ exports.cleanChart = functions.database.ref('/chart/latest/').onUpdate((snapshot
 
   const cleanTracks = cleanOldTracks(tracks)
 
+  console.log('TRACKS DIFFERENCE', getDifferenceTracks(tracks, cleanTracks))
+
   return admin.database().ref('/chart/latest').update({
     tracks: cleanTracks,
     updated: new Date(),
@@ -156,7 +158,7 @@ app.use(bodyParser.raw({
   type: 'application/atom+xml',
 }))
 
-const whitelist = ['http://local.hype.nunchi.love', 'http://.hype.nunchi.love']
+const whitelist = ['http://local.hype.nunchi.love', 'http://hype.nunchi.love']
 const corsOptions = {
   origin: function (origin, callback) {
     if (whitelist.indexOf(origin) !== -1) {
@@ -318,6 +320,11 @@ app.post('/service/PubSubHubbub/subscribe/:topicId', cors(corsOptions), (request
     .catch( error => {
       console.error(error)
     })
+})
+
+app.post('/webhook/fetchViews', (request, response) => {
+  console.log('Fetching Views')
+  return response.send('fetched views')
 })
 
 

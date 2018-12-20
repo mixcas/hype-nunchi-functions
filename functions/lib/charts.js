@@ -1,5 +1,6 @@
 const parseDate = require('date-fns/parse')
 const dateFns = require('date-fns')
+const _ = require('underscore')
 
 const daysAgeLimit = 30
 
@@ -8,15 +9,23 @@ const isOldTrack = track => dateFns.differenceInDays(new Date(), track.published
 module.exports.isOldTrack = isOldTrack
 
 const cleanOldTracks = tracks => {
-  let newChart = {}
+  let cleanTracks = {}
   Object.keys(tracks).map( key => {
     if (!isOldTrack(tracks[key])) {
-      newChart = Object.assign({}, newChart, {
+      cleanTracks = Object.assign({}, cleanTracks, {
         [key]: tracks[key],
       })
     }
   })
 
-  return newChart
+  return cleanTracks
 }
 module.exports.cleanOldTracks = cleanOldTracks
+
+const getDifferenceTracks = (oldTracks, newTracks) => {
+  return {
+    removed: _.difference(Object.keys(oldTracks), Object.keys(newTracks)),
+    added: _.difference(Object.keys(newTracks), Object.keys(oldTracks)),
+  }
+}
+module.exports.getDifferenceTracks = getDifferenceTracks
