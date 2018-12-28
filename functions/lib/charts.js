@@ -23,6 +23,8 @@ const cleanOldTracks = tracks => {
 module.exports.cleanOldTracks = cleanOldTracks
 
 const getDifferenceTracks = (oldTracks, newTracks) => {
+  console.log('OLD KEYS', Object.keys(oldTracks))
+  console.log('NEW KEYS', Object.keys(newTracks))
   return {
     removed: _.difference(Object.keys(oldTracks), Object.keys(newTracks)),
     added: _.difference(Object.keys(newTracks), Object.keys(oldTracks)),

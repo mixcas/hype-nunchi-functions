@@ -130,6 +130,8 @@ exports.cleanChart = functions.database.ref('/chart/latest/').onUpdate((snapshot
 
   const cleanTracks = cleanOldTracks(tracks)
 
+  console.log('TRACKS', tracks)
+  console.log('CLEAN TRACKS', cleanTracks)
   console.log('TRACKS DIFFERENCE', getDifferenceTracks(tracks, cleanTracks))
 
   return admin.database().ref('/chart/latest').update({
