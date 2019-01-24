@@ -245,6 +245,7 @@ app.post('/service/PubSubHubbub/:channelId', (request, response) => {
       // console.log('TRACK', compactObject(track))
 
       admin.database().ref(`/tracks/${id}`).set(compactObject(track))
+      // admin.firestore().collection('tracks').doc(id).set(compactObject(track), { merge: true })
     }
 
     // REMOVED
@@ -327,6 +328,11 @@ app.post('/service/PubSubHubbub/subscribe/:topicId', cors(corsOptions), (request
 app.post('/webhook/fetchViews', (request, response) => {
   console.log('Fetching Views')
   return response.send('fetched views')
+})
+
+app.post('/webhook/cleanChart', (request, response) => {
+  console.log('Cleaning Chart')
+  return response.send('cleaned chart')
 })
 
 
