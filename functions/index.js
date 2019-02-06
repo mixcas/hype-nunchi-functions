@@ -98,6 +98,49 @@ exports.fetchSubscriptionInfo = functions.database.ref('/subscriptions/{docId}')
     })
 })
 
+/**
+ * Reacts to onUpdate in the status property in the /tracks collection
+ *
+ *  -
+ */
+exports.updateInChart = functions.database.ref('/tracks/{docId}').onUpdate((snapshot, context) => {
+  const docId = context.params.docId
+  const doc = snapshot.after.val()
+
+  // if published
+  if (doc.status === 'published') {
+    // add to Latest chart
+    return admin.database().ref(`/chart/latest/tracks/${docId}`).update(compactObject(doc))
+  } else if (doc.status === 'unpublished') {
+    // remove from Latest chart
+    return admin.database().ref(`/chart/latest/tracks/${docId}`).remove()
+  }
+
+  return true
+
+})
+
+exports.cleanChart = functions.database.ref('/chart/latest/').onUpdate((snapshot, context) => {
+  const documents = snapshot.after.val()
+  const { updated, tracks } = documents
+
+  if ((updated && dateFns.differenceInSeconds(new Date(), updated) < 30) || !Object.keys(documents).length) {
+    return false
+  }
+
+  const cleanTracks = cleanOldTracks(tracks)
+
+  console.log('TRACKS', tracks)
+  console.log('CLEAN TRACKS', cleanTracks)
+  console.log('TRACKS DIFFERENCE', getDifferenceTracks(tracks, cleanTracks))
+
+  return admin.database().ref('/chart/latest').update({
+    tracks: cleanTracks,
+    updated: new Date(),
+
+  })
+})
+
 // EXPRESS
 const app = express()
 
@@ -203,6 +246,7 @@ app.post('/service/PubSubHubbub/:channelId', (request, response) => {
 
       // console.log('TRACK', compactObject(track))
 
+      admin.database().ref(`/tracks/${id}`).set(compactObject(track))
       admin.firestore().collection('tracks').doc(id).set(compactObject(track), { merge: true })
     }
 
@@ -215,6 +259,7 @@ app.post('/service/PubSubHubbub/:channelId', (request, response) => {
 
       console.log('DELETE VIDEO', id)
 
+      admin.database().ref(`/tracks/${id}`).remove()
       admin.firestore().collection('tracks').doc(id).delete()
     }
   }
